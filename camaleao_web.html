@@ -1,0 +1,578 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Camaleão Pessoal</title>
+<style>
+:root {
+  --bg: #0f172a; --bg2: #1e293b; --bg3: #334155;
+  --text: #e2e8f0; --text2: #94a3b8; --text3: #64748b;
+  --green: #10b981; --green2: #059669; --green-bg: #10b98122;
+  --amber: #f59e0b; --amber-bg: #f59e0b22;
+  --red: #ef4444; --red-bg: #ef444422;
+  --blue: #3b82f6; --blue-bg: #3b82f622;
+  --purple: #8b5cf6;
+  --radius: 12px; --radius-sm: 8px;
+}
+* { margin:0; padding:0; box-sizing:border-box; font-family:'Segoe UI',system-ui,-apple-system,sans-serif; }
+body { background:var(--bg); color:var(--text); height:100vh; display:flex; overflow:hidden; }
+
+/* ===== SIDEBAR ===== */
+.sidebar { width:280px; background:var(--bg2); border-right:1px solid var(--bg3); display:flex; flex-direction:column; flex-shrink:0; }
+.sidebar-header { padding:20px; border-bottom:1px solid var(--bg3); }
+.sidebar-header h1 { font-size:1.15rem; color:var(--green); display:flex; align-items:center; gap:8px; }
+.sidebar-header .version { font-size:.7rem; color:var(--text3); margin-top:4px; }
+.sidebar-tabs { display:flex; border-bottom:1px solid var(--bg3); }
+.sidebar-tab { flex:1; padding:10px; text-align:center; font-size:.8rem; color:var(--text3); cursor:pointer; border-bottom:2px solid transparent; transition:.2s; }
+.sidebar-tab:hover { color:var(--text); }
+.sidebar-tab.active { color:var(--green); border-bottom-color:var(--green); }
+.sidebar-content { flex:1; overflow-y:auto; }
+.sidebar-content::-webkit-scrollbar { width:4px; }
+.sidebar-content::-webkit-scrollbar-thumb { background:var(--bg3); border-radius:2px; }
+
+/* Nicho items */
+.nicho-item { padding:10px 14px; margin:4px 8px; border-radius:var(--radius-sm); cursor:pointer; transition:.2s; display:flex; flex-direction:column; gap:4px; }
+.nicho-item:hover { background:var(--bg3); }
+.nicho-item.active { background:var(--green-bg); border:1px solid var(--green); }
+.nicho-item .nicho-top { display:flex; align-items:center; gap:8px; }
+.nicho-item .badge { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
+.nicho-item .badge.auto { background:var(--amber); }
+.nicho-item .badge.manual { background:var(--green); }
+.nicho-item .badge.hibernado { background:var(--text3); }
+.nicho-item .nicho-name { font-size:.85rem; font-weight:600; flex:1; }
+.nicho-item .nicho-count { font-size:.7rem; color:var(--text3); }
+.nicho-item .nicho-bar { height:3px; background:var(--bg3); border-radius:2px; overflow:hidden; margin-top:2px; }
+.nicho-item .nicho-bar-fill { height:100%; border-radius:2px; transition:width .5s; }
+.nicho-item .nicho-meta { display:flex; gap:8px; font-size:.65rem; color:var(--text3); margin-top:2px; }
+.nicho-item .nicho-meta .tag { padding:1px 6px; border-radius:4px; font-size:.6rem; }
+.tag-auto { background:var(--amber-bg); color:var(--amber); }
+.tag-nll { background:var(--blue-bg); color:var(--blue); }
+.tag-hibernado { background:var(--bg3); color:var(--text3); }
+
+/* Energy tab */
+.energy-panel { padding:12px; }
+.energy-item { margin-bottom:12px; }
+.energy-item .energy-label { display:flex; justify-content:space-between; font-size:.8rem; margin-bottom:4px; }
+.energy-item .energy-label .name { font-weight:600; }
+.energy-item .energy-label .value { color:var(--blue); font-family:monospace; }
+.energy-bar { height:24px; background:var(--bg3); border-radius:6px; overflow:hidden; position:relative; }
+.energy-bar-fill { height:100%; border-radius:6px; transition:width .8s ease; display:flex; align-items:center; padding-left:8px; font-size:.7rem; font-weight:600; color:#fff; min-width:30px; }
+
+/* Create niche */
+.create-niche { padding:12px; border-top:1px solid var(--bg3); }
+.create-niche input { width:100%; padding:8px 12px; border-radius:var(--radius-sm); border:1px solid var(--bg3); background:var(--bg); color:var(--text); font-size:.8rem; margin-bottom:6px; outline:none; }
+.create-niche input:focus { border-color:var(--green); }
+.create-niche button { width:100%; padding:8px; border-radius:var(--radius-sm); border:none; background:var(--green); color:#fff; font-weight:600; font-size:.8rem; cursor:pointer; transition:.2s; }
+.create-niche button:hover { background:var(--green2); }
+
+.sidebar-footer { padding:12px; border-top:1px solid var(--bg3); font-size:.7rem; color:var(--text3); text-align:center; }
+
+/* ===== MAIN ===== */
+.main { flex:1; display:flex; flex-direction:column; min-width:0; }
+.chat-header { padding:12px 20px; border-bottom:1px solid var(--bg3); display:flex; align-items:center; justify-content:space-between; gap:12px; }
+.chat-header .info { display:flex; align-items:center; gap:12px; flex:1; min-width:0; }
+.nicho-atual { padding:4px 14px; background:var(--green-bg); color:var(--green); border-radius:20px; font-size:.8rem; font-weight:600; white-space:nowrap; }
+.status { font-size:.75rem; color:var(--text3); white-space:nowrap; }
+.header-actions { display:flex; gap:8px; }
+.header-btn { padding:6px 12px; border-radius:var(--radius-sm); border:1px solid var(--bg3); background:var(--bg2); color:var(--text2); font-size:.75rem; cursor:pointer; transition:.2s; }
+.header-btn:hover { background:var(--bg3); color:var(--text); }
+
+/* Confidence meter */
+.confidence-bar { display:flex; align-items:center; gap:6px; }
+.confidence-bar .bar { width:60px; height:6px; background:var(--bg3); border-radius:3px; overflow:hidden; }
+.confidence-bar .bar-fill { height:100%; border-radius:3px; transition:width .5s, background .5s; }
+.confidence-bar .label { font-size:.7rem; color:var(--text3); font-family:monospace; }
+
+/* Messages */
+.chat-messages { flex:1; overflow-y:auto; padding:20px; display:flex; flex-direction:column; gap:12px; }
+.chat-messages::-webkit-scrollbar { width:4px; }
+.chat-messages::-webkit-scrollbar-thumb { background:var(--bg3); border-radius:2px; }
+.message { max-width:80%; padding:12px 16px; border-radius:16px; font-size:.9rem; line-height:1.6; animation:fadeIn .3s; }
+.message.user { align-self:flex-end; background:var(--green); color:#fff; border-bottom-right-radius:4px; }
+.message.bot { align-self:flex-start; background:var(--bg2); border:1px solid var(--bg3); border-bottom-left-radius:4px; }
+.message .meta { font-size:.7rem; opacity:.6; margin-top:8px; display:flex; gap:8px; flex-wrap:wrap; }
+.message .meta .tag { padding:2px 8px; border-radius:4px; }
+.message .neuro { color:var(--amber); font-size:.75rem; margin-top:6px; padding:6px 10px; background:var(--amber-bg); border-radius:var(--radius-sm); }
+
+/* Routing indicator */
+.routing-info { display:flex; align-items:center; gap:8px; padding:6px 12px; background:var(--bg); border:1px solid var(--bg3); border-radius:var(--radius-sm); font-size:.75rem; color:var(--text2); margin:4px 0; animation:fadeIn .3s; }
+.routing-info .arrow { color:var(--green); font-weight:bold; }
+.routing-info .method { padding:2px 6px; border-radius:4px; font-size:.65rem; font-weight:600; }
+.method-energia { background:var(--blue-bg); color:var(--blue); }
+.method-keywords { background:var(--green-bg); color:var(--green); }
+.method-fallback { background:var(--bg3); color:var(--text3); }
+
+/* Input */
+.chat-input { padding:16px 20px; border-top:1px solid var(--bg3); display:flex; gap:10px; }
+.chat-input input { flex:1; padding:12px 18px; border-radius:24px; border:1px solid var(--bg3); background:var(--bg2); color:var(--text); font-size:.9rem; outline:none; transition:.2s; }
+.chat-input input:focus { border-color:var(--green); box-shadow:0 0 0 3px var(--green-bg); }
+.chat-input button { padding:12px 24px; border-radius:24px; border:none; background:var(--green); color:#fff; font-weight:600; cursor:pointer; transition:.2s; }
+.chat-input button:hover { background:var(--green2); transform:scale(1.02); }
+.chat-input button:disabled { opacity:.5; cursor:not-allowed; transform:none; }
+
+/* Typing indicator */
+.typing { display:flex; gap:5px; padding:14px 18px; }
+.typing span { width:8px; height:8px; background:var(--text3); border-radius:50%; animation:typing 1.4s infinite; }
+.typing span:nth-child(2) { animation-delay:.2s; }
+.typing span:nth-child(3) { animation-delay:.4s; }
+
+/* Modal */
+.modal { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:#000000bb; z-index:100; justify-content:center; align-items:center; backdrop-filter:blur(4px); }
+.modal.active { display:flex; }
+.modal-content { background:var(--bg2); border:1px solid var(--bg3); border-radius:var(--radius); width:600px; max-width:90vw; max-height:85vh; overflow-y:auto; padding:24px; }
+.modal-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; }
+.modal-header h2 { font-size:1.1rem; color:var(--green); }
+.modal-close { cursor:pointer; font-size:1.5rem; color:var(--text3); transition:.2s; }
+.modal-close:hover { color:var(--text); }
+.stat-row { display:flex; justify-content:space-between; padding:10px 0; border-bottom:1px solid var(--bg3); font-size:.85rem; }
+.stat-row span:last-child { font-family:monospace; color:var(--green); }
+.stat-bar { height:22px; background:var(--bg3); border-radius:6px; overflow:hidden; margin:6px 0; position:relative; }
+.stat-bar-fill { height:100%; border-radius:6px; transition:width .5s; display:flex; align-items:center; padding-left:8px; font-size:.7rem; font-weight:600; }
+.section-title { font-size:.85rem; color:var(--text2); margin:16px 0 8px; font-weight:600; }
+
+/* Animations */
+@keyframes fadeIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+@keyframes typing { 0%,60%,100%{transform:translateY(0)} 30%{transform:translateY(-8px)} }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.5} }
+.pulse { animation:pulse 2s infinite; }
+</style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<div class="sidebar">
+  <div class="sidebar-header">
+    <h1>🦎 Camaleão</h1>
+    <div class="version">v3.2.0 — Energia + Neurogênese</div>
+  </div>
+
+  <div class="sidebar-tabs">
+    <div class="sidebar-tab active" onclick="trocarAba('nichos')">Nichos</div>
+    <div class="sidebar-tab" onclick="trocarAba('energia')">⚡ Energia</div>
+    <div class="sidebar-tab" onclick="trocarAba('criar')">＋</div>
+  </div>
+
+  <div class="sidebar-content">
+    <div id="abaNichos" class="nichos-list"></div>
+    <div id="abaEnergia" class="energy-panel" style="display:none"></div>
+    <div id="abaCriar" style="display:none">
+      <div class="create-niche">
+        <input type="text" id="novoNome" placeholder="Nome do nicho">
+        <input type="text" id="novaDescricao" placeholder="Descrição">
+        <input type="text" id="novasKeywords" placeholder="Palavras-chave (separar por vírgula)">
+        <button onclick="criarNicho()">🦎 Criar Nicho</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="sidebar-footer">
+    <div id="footerInfo">Carregando...</div>
+  </div>
+</div>
+
+<!-- MAIN -->
+<div class="main">
+  <div class="chat-header">
+    <div class="info">
+      <div class="nicho-atual" id="nichoAtual">geral</div>
+      <div class="confidence-bar">
+        <div class="bar"><div class="bar-fill" id="confBar" style="width:50%;background:var(--amber)"></div></div>
+        <div class="label" id="confLabel">0.50</div>
+      </div>
+      <div class="status" id="statusInfo">Pronto</div>
+    </div>
+    <div class="header-actions">
+      <button class="header-btn" onclick="abrirDiagnostico()">📊 Diagnóstico</button>
+      <button class="header-btn" onclick="exportar()">💾 Backup</button>
+    </div>
+  </div>
+
+  <div class="chat-messages" id="chatMessages"></div>
+
+  <div class="chat-input">
+    <input type="text" id="inputPrompt" placeholder="Digite sua mensagem..." onkeypress="if(event.key==='Enter')enviar()">
+    <button id="btnEnviar" onclick="enviar()">Enviar</button>
+  </div>
+</div>
+
+<!-- MODAL DIAGNÓSTICO -->
+<div class="modal" id="modalDiagnostico">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h2>📊 Diagnóstico do Organismo</h2>
+      <span class="modal-close" onclick="fecharDiagnostico()">&times;</span>
+    </div>
+    <div id="conteudoDiagnostico"></div>
+  </div>
+</div>
+
+<!-- MODAL DETALHES NICHO -->
+<div class="modal" id="modalNicho">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h2 id="nichoModalTitulo">Nicho</h2>
+      <span class="modal-close" onclick="fecharNicho()">&times;</span>
+    </div>
+    <div id="conteudoNicho"></div>
+  </div>
+</div>
+
+<script>
+const API = '';
+let nichoAtual = 'geral';
+let carregando = false;
+let ultimaConf = 0.5;
+let historicoRouting = [];
+
+// ===== NICHOS =====
+async function carregarNichos() {
+  try {
+    const r = await fetch(`${API}/api/nichos`);
+    const dados = await r.json();
+    renderizarNichos(dados);
+    return dados;
+  } catch(e) { console.error('Erro ao carregar nichos:', e); }
+}
+
+function renderizarNichos(dados) {
+  const list = document.getElementById('abaNichos');
+  list.innerHTML = '';
+  const entries = Object.entries(dados).sort((a,b) => (b[1].historico||0) - (a[1].historico||0));
+  const maxHist = Math.max(1, ...entries.map(([,v]) => v.historico||0));
+
+  for (const [nome, info] of entries) {
+    const div = document.createElement('div');
+    div.className = 'nicho-item' + (nome === nichoAtual ? ' active' : '') + (info.hibernado ? ' hibernado' : '');
+
+    const badgeClass = info.hibernado ? 'hibernado' : info.auto ? 'auto' : 'manual';
+    const barPct = Math.min(100, ((info.historico||0) / maxHist) * 100);
+    const barColor = info.hibernado ? 'var(--text3)' : info.auto ? 'var(--amber)' : 'var(--green)';
+
+    let metaHtml = '';
+    if (info.auto) metaHtml += '<span class="tag tag-auto">auto</span>';
+    if (info.hibernado) metaHtml += '<span class="tag tag-hibernado">❄️</span>';
+    if (info.nll_lar != null) metaHtml += `<span class="tag tag-nll">NLL ${info.nll_lar.toFixed(2)}</span>`;
+
+    div.innerHTML = `
+      <div class="nicho-top">
+        <span class="badge ${badgeClass}"></span>
+        <span class="nicho-name">${nome}</span>
+        <span class="nicho-count">${info.historico||0}</span>
+      </div>
+      <div class="nicho-bar"><div class="nicho-bar-fill" style="width:${barPct}%;background:${barColor}"></div></div>
+      ${metaHtml ? `<div class="nicho-meta">${metaHtml}</div>` : ''}
+    `;
+    div.onclick = () => { nichoAtual = nome; atualizarUI(); };
+    div.ondblclick = () => abrirDetalhesNicho(nome, info);
+    list.appendChild(div);
+  }
+
+  document.getElementById('footerInfo').textContent = `${entries.length} nichos · ${entries.filter(([,v])=>!v.hibernado).length} ativos`;
+}
+
+// ===== ENERGIA =====
+async function carregarEnergia() {
+  try {
+    const r = await fetch(`${API}/api/energia`);
+    const dados = await r.json();
+    renderizarEnergia(dados);
+  } catch(e) { /* API pode não existir ainda */ }
+}
+
+function renderizarEnergia(dados) {
+  const panel = document.getElementById('abaEnergia');
+  if (!dados.nichos || Object.keys(dados.nichos).length === 0) {
+    panel.innerHTML = '<div style="padding:20px;text-align:center;color:var(--text3);font-size:.85rem">Sem dados de energia ainda.<br>Faça algumas conversas primeiro.</div>';
+    return;
+  }
+  let html = '';
+  const entries = Object.entries(dados.nichos).sort((a,b) => (a[1].lar||99) - (b[1].lar||99));
+  const maxNll = Math.max(...entries.map(([,v]) => v.lar||v.media||1));
+
+  for (const [nome, info] of entries) {
+    const lar = info.lar != null ? info.lar : info.media;
+    const pct = Math.min(100, (lar / (maxNll * 1.2)) * 100);
+    const color = lar < 2 ? 'var(--green)' : lar < 4 ? 'var(--amber)' : 'var(--red)';
+
+    html += `
+      <div class="energy-item">
+        <div class="energy-label">
+          <span class="name">${nome}</span>
+          <span class="value">${lar.toFixed(2)} nats</span>
+        </div>
+        <div class="energy-bar">
+          <div class="energy-bar-fill" style="width:${pct}%;background:${color}">${lar.toFixed(1)}</div>
+        </div>
+        <div style="font-size:.65rem;color:var(--text3);margin-top:2px">
+          μ=${info.media?.toFixed(2)||'—'} σ=${info.std?.toFixed(2)||'—'} n=${info.amostras||0}
+        </div>
+      </div>`;
+  }
+  panel.innerHTML = html;
+}
+
+// ===== ABA =====
+function trocarAba(aba) {
+  document.querySelectorAll('.sidebar-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('abaNichos').style.display = aba === 'nichos' ? '' : 'none';
+  document.getElementById('abaEnergia').style.display = aba === 'energia' ? '' : 'none';
+  document.getElementById('abaCriar').style.display = aba === 'criar' ? '' : 'none';
+  event.target.classList.add('active');
+  if (aba === 'energia') carregarEnergia();
+}
+
+// ===== CRIAR NICHO =====
+async function criarNicho() {
+  const nome = document.getElementById('novoNome').value.trim();
+  const desc = document.getElementById('novaDescricao').value.trim();
+  const kw = document.getElementById('novasKeywords').value.trim();
+  if (!nome) return alert('Nome é obrigatório');
+  try {
+    const r = await fetch(`${API}/api/criar_nicho`, {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({nome, descricao: desc, palavras_chave: kw})
+    });
+    const d = await r.json();
+    if (d.erro) { alert(d.erro); return; }
+    document.getElementById('novoNome').value = '';
+    document.getElementById('novaDescricao').value = '';
+    document.getElementById('novasKeywords').value = '';
+    carregarNichos();
+    trocarAba('nichos');
+    document.querySelectorAll('.sidebar-tab')[0].classList.add('active');
+  } catch(e) { alert('Erro ao criar nicho'); }
+}
+
+// ===== UI =====
+function atualizarUI() {
+  document.getElementById('nichoAtual').textContent = nichoAtual;
+  carregarNichos();
+}
+
+function atualizarConfianca(conf) {
+  ultimaConf = conf;
+  const pct = Math.round(conf * 100);
+  const bar = document.getElementById('confBar');
+  const label = document.getElementById('confLabel');
+  bar.style.width = pct + '%';
+  bar.style.background = conf > 0.7 ? 'var(--green)' : conf > 0.4 ? 'var(--amber)' : 'var(--red)';
+  label.textContent = conf.toFixed(2);
+}
+
+function adicionarMensagem(texto, tipo, meta='', neuro='', routing=null) {
+  const container = document.getElementById('chatMessages');
+
+  // Routing indicator
+  if (routing) {
+    const rDiv = document.createElement('div');
+    rDiv.className = 'routing-info';
+    const methodClass = routing.motivo === 'energia' ? 'method-energia' : routing.motivo === 'palavras_chave' ? 'method-keywords' : 'method-fallback';
+    const methodLabel = routing.motivo === 'energia' ? '⚡ energia' : routing.motivo === 'palavras_chave' ? '🔑 keywords' : '📍 fallback';
+    rDiv.innerHTML = `<span class="arrow">→</span> <span>${routing.nicho}</span> <span class="method ${methodClass}">${methodLabel}</span> ${routing.conf != null ? `<span>conf ${(routing.conf*100).toFixed(0)}%</span>` : ''}`;
+    container.appendChild(rDiv);
+  }
+
+  const div = document.createElement('div');
+  div.className = 'message ' + tipo;
+  let html = texto.replace(/\n/g, '<br>');
+  if (meta) html += `<div class="meta">${meta}</div>`;
+  if (neuro) html += `<div class="neuro">${neuro}</div>`;
+  div.innerHTML = html;
+  container.appendChild(div);
+  container.scrollTop = container.scrollHeight;
+}
+
+function mostrarTyping() {
+  const container = document.getElementById('chatMessages');
+  const div = document.createElement('div');
+  div.className = 'message bot typing';
+  div.id = 'typing';
+  div.innerHTML = '<span></span><span></span><span></span>';
+  container.appendChild(div);
+  container.scrollTop = container.scrollHeight;
+}
+
+function removerTyping() {
+  const t = document.getElementById('typing');
+  if (t) t.remove();
+}
+
+// ===== ENVIAR =====
+async function enviar() {
+  const input = document.getElementById('inputPrompt');
+  const prompt = input.value.trim();
+  if (!prompt || carregando) return;
+  input.value = '';
+  carregando = true;
+  document.getElementById('btnEnviar').disabled = true;
+
+  adicionarMensagem(prompt, 'user');
+  mostrarTyping();
+  document.getElementById('statusInfo').textContent = 'Pensando...';
+  document.getElementById('statusInfo').classList.add('pulse');
+
+  try {
+    const r = await fetch(`${API}/api/conversar`, {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({prompt})
+    });
+    const dados = await r.json();
+    removerTyping();
+
+    // Routing info
+    const routing = {
+      nicho: dados.nicho,
+      motivo: dados.motivo || 'energia',
+      conf: dados.confianca
+    };
+
+    // Meta tags
+    let metaTags = `<span class="tag" style="background:var(--green-bg);color:var(--green)">${dados.nicho}</span>`;
+    if (dados.nll_lar != null) metaTags += `<span class="tag" style="background:var(--blue-bg);color:var(--blue)">NLL ${dados.nll_lar.toFixed(2)}</span>`;
+
+    const neuro = dados.neurogenese ? `🦎 Neurogênese: nicho '${dados.neurogenese}' nasceu!` : '';
+
+    adicionarMensagem(dados.resposta, 'bot', metaTags, neuro, routing);
+
+    if (dados.nicho) nichoAtual = dados.nicho;
+    if (dados.confianca != null) atualizarConfianca(dados.confianca);
+
+    // Historico de routing
+    historicoRouting.push({nicho: dados.nicho, conf: dados.confianca, ts: Date.now()});
+    if (historicoRouting.length > 20) historicoRouting.shift();
+
+    carregarNichos();
+  } catch(e) {
+    removerTyping();
+    adicionarMensagem('❌ Erro de comunicação com o organismo.', 'bot');
+  }
+
+  carregando = false;
+  document.getElementById('btnEnviar').disabled = false;
+  document.getElementById('statusInfo').textContent = 'Pronto';
+  document.getElementById('statusInfo').classList.remove('pulse');
+}
+
+// ===== DETALHES NICHO =====
+function abrirDetalhesNicho(nome, info) {
+  document.getElementById('nichoModalTitulo').textContent = `🦎 ${nome}`;
+
+  let html = '';
+  html += `<div class="stat-row"><span>Tipo</span><span>${info.auto ? '🟡 Auto-gerado' : '🟢 Manual'}</span></div>`;
+  html += `<div class="stat-row"><span>Conversas</span><span>${info.historico||0}</span></div>`;
+  html += `<div class="stat-row"><span>Amostras</span><span>${info.amostras||0}</span></div>`;
+  html += `<div class="stat-row"><span>Status</span><span>${info.hibernado ? '❄️ Hibernado' : '🟢 Ativo'}</span></div>`;
+
+  if (info.nll_lar != null) {
+    html += `<div class="stat-row"><span>NLL Lar (energia)</span><span style="color:var(--blue)">${info.nll_lar.toFixed(3)}</span></div>`;
+  }
+  if (info.nll_amostras) {
+    html += `<div class="stat-row"><span>Amostras NLL</span><span>${info.nll_amostras}</span></div>`;
+  }
+
+  if (info.resumo) {
+    html += `<div class="section-title">📝 Resumo</div>`;
+    html += `<div style="font-size:.85rem;color:var(--text2);line-height:1.5;padding:8px;background:var(--bg);border-radius:var(--radius-sm)">${info.resumo}</div>`;
+  }
+
+  if (info.documentos && info.documentos.length > 0) {
+    html += `<div class="section-title">📄 Documentos RAG</div>`;
+    for (const doc of info.documentos) {
+      html += `<div style="font-size:.8rem;color:var(--text2);padding:4px 0">• ${doc}</div>`;
+    }
+  }
+
+  html += `<div style="margin-top:16px;display:flex;gap:8px">
+    <button onclick="fecharNicho()" style="flex:1;padding:8px;border-radius:var(--radius-sm);border:1px solid var(--bg3);background:var(--bg);color:var(--text2);cursor:pointer">Fechar</button>
+  </div>`;
+
+  document.getElementById('conteudoNicho').innerHTML = html;
+  document.getElementById('modalNicho').classList.add('active');
+}
+
+function fecharNicho() {
+  document.getElementById('modalNicho').classList.remove('active');
+}
+
+// ===== DIAGNÓSTICO =====
+async function abrirDiagnostico() {
+  try {
+    const [r1, r2] = await Promise.all([
+      fetch(`${API}/api/diagnostico`),
+      fetch(`${API}/api/energia`).catch(() => null)
+    ]);
+    const d = await r1.json();
+    let e = null;
+    if (r2 && r2.ok) e = await r2.json();
+
+    let html = '';
+
+    // Stats gerais
+    html += `<div class="section-title">📊 Visão Geral</div>`;
+    html += `<div class="stat-row"><span>Total de conversas</span><span>${d.total_conversas}</span></div>`;
+    html += `<div class="stat-row"><span>Nichos</span><span>${d.nichos_count}</span></div>`;
+    html += `<div class="stat-row"><span>Memórias</span><span>${d.memorias}</span></div>`;
+
+    // Distribuição
+    html += `<div class="section-title">📈 Distribuição de Conversas</div>`;
+    const total = d.total_conversas || 1;
+    const distEntries = Object.entries(d.distribuicao).sort((a,b) => b[1] - a[1]);
+    const colors = ['var(--green)', 'var(--blue)', 'var(--amber)', 'var(--purple)', 'var(--red)'];
+
+    for (let i = 0; i < distEntries.length; i++) {
+      const [nome, count] = distEntries[i];
+      const pct = (count / total * 100).toFixed(0);
+      const color = colors[i % colors.length];
+      html += `<div style="margin:6px 0;font-size:.8rem;display:flex;justify-content:space-between"><span>${nome}</span><span>${count} (${pct}%)</span></div>`;
+      html += `<div class="stat-bar"><div class="stat-bar-fill" style="width:${pct}%;background:${color}"></div></div>`;
+    }
+
+    // Energia
+    if (e && e.nichos && Object.keys(e.nichos).length > 0) {
+      html += `<div class="section-title">⚡ Energia por Nicho</div>`;
+      for (const [nome, info] of Object.entries(e.nichos)) {
+        const lar = info.lar != null ? info.lar : info.media;
+        const color = lar < 2 ? 'var(--green)' : lar < 4 ? 'var(--amber)' : 'var(--red)';
+        html += `<div class="stat-row"><span>${nome}</span><span style="color:${color}">${lar.toFixed(2)} nats</span></div>`;
+      }
+      html += `<div class="stat-row"><span>Roteamento</span><span>${e.roteamento_energia ? '⚡ Energia' : '📍 Distância'}</span></div>`;
+      html += `<div class="stat-row"><span>Limiar novidade</span><span>${e.limiar_margem}</span></div>`;
+    }
+
+    // Routing recente
+    if (historicoRouting.length > 0) {
+      html += `<div class="section-title">🔄 Últimos Roteamentos</div>`;
+      for (const r of historicoRouting.slice(-5).reverse()) {
+        const ago = Math.round((Date.now() - r.ts) / 1000);
+        html += `<div style="font-size:.8rem;color:var(--text2);padding:3px 0">→ ${r.nicho} (conf ${(r.conf*100).toFixed(0)}%) · ${ago}s atrás</div>`;
+      }
+    }
+
+    document.getElementById('conteudoDiagnostico').innerHTML = html;
+    document.getElementById('modalDiagnostico').classList.add('active');
+  } catch(e) { console.error(e); }
+}
+
+function fecharDiagnostico() {
+  document.getElementById('modalDiagnostico').classList.remove('active');
+}
+
+// ===== EXPORTAR =====
+async function exportar() {
+  try {
+    const r = await fetch(`${API}/api/exportar`, {method:'POST'});
+    const d = await r.json();
+    alert(d.mensagem || 'Backup criado: ' + (d.caminho || ''));
+  } catch(e) { alert('Erro ao exportar'); }
+}
+
+// ===== INIT =====
+carregarNichos();
+carregarEnergia();
+setInterval(() => { carregarNichos(); }, 8000);
+</script>
+</body>
+</html>
